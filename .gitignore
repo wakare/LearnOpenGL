@@ -1,6 +1,4 @@
 *.tlog
-*.vcxproj
-*.vcxproj.*
 
 .vs
 Debug
