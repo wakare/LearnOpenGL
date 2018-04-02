@@ -102,28 +102,82 @@ int main()
 	// Bind the triangle vertex data to buffer.
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-
-
+	// Compile vertex shader
 	GLuint vertexShader;
 	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	const char* shaderText = 
+	const char* szVertexShaderText = 
 		"#version 330 core\nlayout(location = 0) in vec3 position;\nvoid main()\n{\ngl_Position = vec4(position.x, position.y, position.z, 1.0);\n}";
 
-	const GLchar* vertexShaderSource	= shaderText;
+	const GLchar* vertexShaderSource	= szVertexShaderText;
 	const GLchar* vertexShaderArray[1]	= { vertexShaderSource };
 
-	glShaderSource(vertexShader, 1, vertexShaderArray, NULL);
+	glShaderSource(vertexShader, 1, vertexShaderArray, nullptr);
 	glCompileShader(vertexShader);
 
 	GLint success;
 	GLchar infoLog[512];
 	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
 
+	// Print Compile Error
 	if (!success)
 	{
 		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
 		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+		return;
 	}
+
+	// Compile Fragment shader
+	const GLchar* szFragmentShaderText = "#version 330 core\nout vec4 color;\nvoid main()\n{\ncolor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n}";
+	const GLchar* fragmentShaderSource[1] = { szFragmentShaderText };
+
+	GLuint fragmentShader;
+	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, fragmentShaderSource, nullptr);
+	glCompileShader(fragmentShader);
+
+	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+
+	// Print Compile Error
+	if (!success)
+	{
+		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+		return;
+	}
+
+	// Link shader program
+	GLuint shaderProgram;
+	shaderProgram = glCreateProgram();
+	
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
+	glLinkProgram(shaderProgram);
+
+	// Print Link Error
+	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+		return;
+	}
+
+	// Use Program Object
+	glUseProgram(shaderProgram);
+
+	// Clear no use object
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
+
+	// Tell OpenGL how to explain vertex data
+	/* glVertexAttribPointer(
+	GLuint index, 
+	GLint size, 
+	GLenum type, 
+	GLboolean normalized, 
+	GLsizei stride, 
+	const void* pointer);
+	*/
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
 
 	while (!glfwWindowShouldClose(pWindow))
 	{
