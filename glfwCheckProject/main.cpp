@@ -8,6 +8,9 @@
 // GLFW
 #include <GLFW/glfw3.h>
 
+#include "Color.h"
+#include "ShaderMgr.h"
+
 // GLFW Key callBack function
 // nAction = {`GLFW_PRESS`, `GLFW_RELEASE`, `GLFW_REPEAT`}
 void KeyCallBackFunction(GLFWwindow* pWindow,int nKey,int nScanCode,int nAction,int nMode)
@@ -18,16 +21,6 @@ void KeyCallBackFunction(GLFWwindow* pWindow,int nKey,int nScanCode,int nAction,
 		glfwSetWindowShouldClose(pWindow, GL_TRUE);
 	}
 }
-
-struct Color_t
-{
-	float fRed;
-	float fGreen;
-	float fBlue;
-	float fAlpha;
-
-	Color_t(): fRed(0),fGreen(0),fBlue(0),fAlpha(0) {}
-};
 
 void UpdateBackupColor(Color_t* pColor)
 {
@@ -56,6 +49,7 @@ int main()
 
 	GLFWwindow*			pWindow						= nullptr;
 	Color_t*			pBackupColor				= new Color_t();
+	GLuint				VBO;
 
 	// Triangle Vertex Info (position only)
 	GLfloat vertices[] = {
@@ -64,13 +58,15 @@ int main()
 		0.0f,  0.5f, 0.0f
 	};
 
+	// Base ENV config
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	// Mac need this statement
+	// glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	pWindow = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr);
 	if (pWindow == nullptr)
@@ -94,14 +90,6 @@ int main()
 
 	glfwSetKeyCallback(pWindow, KeyCallBackFunction);
 
-	// Create a buffer to store vertex.
-	GLuint VBO;
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-	// Bind the triangle vertex data to buffer.
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
 	// Compile vertex shader
 	GLuint vertexShader;
 	vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -123,7 +111,7 @@ int main()
 	{
 		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
 		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-		return;
+		return -1;
 	}
 
 	// Compile Fragment shader
@@ -142,7 +130,7 @@ int main()
 	{
 		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
 		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-		return;
+		return -1;
 	}
 
 	// Link shader program
@@ -157,7 +145,7 @@ int main()
 	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
 	if (!success) {
 		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-		return;
+		return -1;
 	}
 
 	// Use Program Object
@@ -167,31 +155,56 @@ int main()
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
+	// Define VAO which necessary to core profile
+	GLuint VAO;
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+
+	// Create a buffer to store vertex.
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	// Bind the triangle vertex data to buffer.
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
 	// Tell OpenGL how to explain vertex data
 	/* glVertexAttribPointer(
-	GLuint index, 
-	GLint size, 
-	GLenum type, 
-	GLboolean normalized, 
-	GLsizei stride, 
-	const void* pointer);
+		GLuint index,			
+		GLint size, 
+		GLenum type, 
+		GLboolean normalized, 
+		GLsizei stride, 
+		const void* pointer);
 	*/
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
+
+	// Unbind VAO
+	glBindVertexArray(0);
 
 	while (!glfwWindowShouldClose(pWindow))
 	{
 		glfwPollEvents();
 
+#pragma region Render BackupGround
 		if (GetTickCount64() - nLastUpdateBackupColorTime > 100)
 		{
 			UpdateBackupColor(pBackupColor);
 			nLastUpdateBackupColorTime = GetTickCount64();
 		}
 		RenderBackup(
-			pBackupColor->fRed,pBackupColor->fGreen,pBackupColor->fBlue,pBackupColor->fAlpha, 
+			pBackupColor->fRed, pBackupColor->fGreen, pBackupColor->fBlue, pBackupColor->fAlpha,
 			GL_COLOR_BUFFER_BIT
 		);
+#pragma endregion
+
+#pragma region Render Triangle
+		// Now we can use VAO to draw triangle.
+		glUseProgram(shaderProgram);
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindVertexArray(0);
+#pragma endregion
 
 		glfwSwapBuffers(pWindow);
 	}
