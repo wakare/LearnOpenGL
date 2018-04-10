@@ -1,17 +1,27 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#include <map>
 #include <memory>
 
 #include <GL/glew.h>
 
+enum ShaderType
+{
+	vertexShader = GL_VERTEX_SHADER,
+	fragmentShader = GL_FRAGMENT_SHADER,
+};
+
 class ShaderMgr
 {
 private:
-	std::vector<std::shared_ptr<std::string>> m_szShaderTextVec;
-	std::vector<const char*> m_szShaderPathVec;
+	bool bIsOpenCompileErrorLog = true;
+
+	std::map<ShaderType, std::shared_ptr<std::string>> m_szShaderTextVec;
+	std::map<ShaderType, const char*> m_szShaderPathVec;
 
 public:
+
 	ShaderMgr();
 	~ShaderMgr();
 	bool Init();
@@ -19,5 +29,6 @@ public:
 	bool InitShaderPath();
 	bool InitShaderSourceFile();
 
-	bool BindShader();
+	bool CompileShader();
+	bool LinkProgram();
 };

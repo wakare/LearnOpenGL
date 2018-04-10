@@ -50,6 +50,10 @@ int main()
 	GLFWwindow*			pWindow						= nullptr;
 	Color_t*			pBackupColor				= new Color_t();
 	GLuint				VBO;
+	GLuint				vertexShader;
+	GLint				success;
+	GLchar				infoLog[512];
+	GLuint				shaderProgram;
 
 	// Triangle Vertex Info (position only)
 	GLfloat vertices[] = {
@@ -90,51 +94,49 @@ int main()
 
 	glfwSetKeyCallback(pWindow, KeyCallBackFunction);
 
-	// Compile vertex shader
-	GLuint vertexShader;
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	const char* szVertexShaderText = 
-		"#version 330 core\nlayout(location = 0) in vec3 position;\nvoid main()\n{\ngl_Position = vec4(position.x, position.y, position.z, 1.0);\n}";
+	//// Compile vertex shader
+	//vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	//const char* szVertexShaderText = 
+	//	"#version 330 core\nlayout(location = 0) in vec3 position;\nvoid main()\n{\ngl_Position = vec4(position.x, position.y, position.z, 1.0);\n}";
 
-	const GLchar* vertexShaderSource	= szVertexShaderText;
-	const GLchar* vertexShaderArray[1]	= { vertexShaderSource };
+	//const GLchar* vertexShaderSource	= szVertexShaderText;
+	//const GLchar* vertexShaderArray[1]	= { vertexShaderSource };
 
-	glShaderSource(vertexShader, 1, vertexShaderArray, nullptr);
-	glCompileShader(vertexShader);
+	//glShaderSource(vertexShader, 1, vertexShaderArray, nullptr);
+	//glCompileShader(vertexShader);
 
-	GLint success;
-	GLchar infoLog[512];
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+	//GLint success;
+	//GLchar infoLog[512];
+	//glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
 
-	// Print Compile Error
-	if (!success)
-	{
-		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-		return -1;
-	}
+	//// Print Compile Error
+	//if (!success)
+	//{
+	//	glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+	//	std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+	//	return -1;
+	//}
 
-	// Compile Fragment shader
-	const GLchar* szFragmentShaderText = "#version 330 core\nout vec4 color;\nvoid main()\n{\ncolor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n}";
-	const GLchar* fragmentShaderSource[1] = { szFragmentShaderText };
+	//// Compile Fragment shader
+	//const GLchar* szFragmentShaderText = "#version 330 core\nout vec4 color;\nvoid main()\n{\ncolor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n}";
+	//const GLchar* fragmentShaderSource[1] = { szFragmentShaderText };
 
-	GLuint fragmentShader;
-	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, fragmentShaderSource, nullptr);
-	glCompileShader(fragmentShader);
+	//GLuint fragmentShader;
+	//fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	//glShaderSource(fragmentShader, 1, fragmentShaderSource, nullptr);
+	//glCompileShader(fragmentShader);
 
-	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+	//glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
 
-	// Print Compile Error
-	if (!success)
-	{
-		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-		return -1;
-	}
+	//// Print Compile Error
+	//if (!success)
+	//{
+	//	glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+	//	std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+	//	return -1;
+	//}
 
 	// Link shader program
-	GLuint shaderProgram;
 	shaderProgram = glCreateProgram();
 	
 	glAttachShader(shaderProgram, vertexShader);
