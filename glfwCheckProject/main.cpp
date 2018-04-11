@@ -50,11 +50,11 @@ int main()
 	GLFWwindow*			pWindow						= nullptr;
 	Color_t*			pBackupColor				= new Color_t();
 	GLuint				VBO;
-	GLuint				vertexShader;
 	GLint				success;
 	GLchar				infoLog[512];
 	GLuint				shaderProgram;
 
+	ShaderMgr			shaderMgr;
 	// Triangle Vertex Info (position only)
 	GLfloat vertices[] = {
 		-0.5f, -0.5f, 0.0f,
@@ -93,6 +93,16 @@ int main()
 	glViewport(0, 0, nWidth, nHeight);
 
 	glfwSetKeyCallback(pWindow, KeyCallBackFunction);
+
+	if (!shaderMgr.Init())
+		return -1;
+
+	if (!shaderMgr.CompileShader())
+		return -1;
+
+	shaderProgram = glCreateProgram();
+	if (!shaderMgr.LinkProgram(shaderProgram))
+		return -1;
 
 	//// Compile vertex shader
 	//vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -136,26 +146,26 @@ int main()
 	//	return -1;
 	//}
 
-	// Link shader program
-	shaderProgram = glCreateProgram();
-	
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
+	//// Link shader program
+	//shaderProgram = glCreateProgram();
+	//
+	//glAttachShader(shaderProgram, vertexShader);
+	//glAttachShader(shaderProgram, fragmentShader);
+	//glLinkProgram(shaderProgram);
 
-	// Print Link Error
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-		return -1;
-	}
+	//// Print Link Error
+	//glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+	//if (!success) {
+	//	glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+	//	return -1;
+	//}
 
 	// Use Program Object
 	glUseProgram(shaderProgram);
 
 	// Clear no use object
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
+	glDeleteShader(eVertexShader);
+	glDeleteShader(eFragmentShader);
 
 	// Define VAO which necessary to core profile
 	GLuint VAO;

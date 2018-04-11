@@ -20,8 +20,10 @@ bool ShaderMgr::InitShaderPath()
 	auto szVertexShaderPath = "Resources/VertexShader.glsl";
 	auto szFragmentShaderPath = "Resources/FragmentShader.glsl";
 
-	m_szShaderPathVec.insert(std::make_pair(vertexShader, szVertexShaderPath));
-	m_szShaderPathVec.insert(std::make_pair(fragmentShader, szFragmentShaderPath));
+	m_szShaderPathVec.insert(std::make_pair(eVertexShader, szVertexShaderPath));
+	m_szShaderPathVec.insert(std::make_pair(eFragmentShader, szFragmentShaderPath));
+
+	return true;
 }
 
 bool ShaderMgr::InitShaderSourceFile()
@@ -39,17 +41,22 @@ bool ShaderMgr::InitShaderSourceFile()
 
 		shaderReadStream.close();
 	}
+
+	return true;
 }
 
 bool ShaderMgr::Init()
 {
+	if (!InitShaderPath())
+		return false;
+
 	if (!InitShaderSourceFile())
 		return false;
 }
 
 bool ShaderMgr::UnInit()
 {
-
+	return true;
 }
 
 bool ShaderMgr::CompileShader()
@@ -57,24 +64,27 @@ bool ShaderMgr::CompileShader()
 	for (auto shaderPair : m_szShaderTextVec)
 	{
 		auto shader = glCreateShader(shaderPair.first);
+		GLint success;
 
 		const GLchar* ShaderSource = shaderPair.second->c_str();
 		const GLchar* vertexShaderArray[1] = { ShaderSource };
 
 		glShaderSource(shader, 1, vertexShaderArray, nullptr);
 		glCompileShader(shader);
+		glGetShaderiv(eVertexShader, GL_COMPILE_STATUS, &success);
+
+		_ASSERT(success != 0);
+		m_LinkedShaderProgram.push_back(shader);
 
 		if (!bIsOpenCompileErrorLog)
 			continue;
-
-		GLint success;
+		
 		GLchar infoLog[512];
-		glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
 
 		// Print Compile Error
 		if (!success)
 		{
-			glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+			glGetShaderInfoLog(eVertexShader, 512, NULL, infoLog);
 			std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
 			return -1;
 		}
@@ -83,23 +93,28 @@ bool ShaderMgr::CompileShader()
 	return true;
 }
 
-bool ShaderMgr::LinkProgram()
+bool ShaderMgr::LinkProgram(GLuint shaderProgram)
 {
-	// Link shader program
-	auto shaderProgram = glCreateProgram();
-
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-
-	if (!bIsOpenCompileErrorLog)
-		return true;
-
-	GLint success;
+	GLint success = false;
 	GLchar infoLog[512];
 
-	// Print Link Error
+	if (m_LinkedShaderProgram.size() <= 0)
+		return false;
+
+	// Link shader program
+	for (auto shader : m_LinkedShaderProgram)
+	{
+		glAttachShader(shaderProgram, shader);
+	}
+	glLinkProgram(shaderProgram);
 	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+
+	_ASSERT(success != 0);
+
+	if (!bIsOpenCompileErrorLog)
+		return success;
+
+	// Print Link Error
 	if (!success) {
 		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
 		return -1;
