@@ -1,4 +1,5 @@
 #include "ShaderMgr.h"
+#include "GlobalDefine.h"
 #include <fstream>
 
 ShaderMgr::ShaderMgr()
@@ -73,21 +74,23 @@ bool ShaderMgr::CompileShader()
 		glCompileShader(shader);
 		glGetShaderiv(eVertexShader, GL_COMPILE_STATUS, &success);
 
-		_ASSERT(success != 0);
 		m_LinkedShaderProgram.push_back(shader);
 
-		if (!bIsOpenCompileErrorLog)
-			continue;
-		
-		GLchar infoLog[512];
-
-		// Print Compile Error
-		if (!success)
+		if (bIsOpenCompileErrorLog)
 		{
-			glGetShaderInfoLog(eVertexShader, 512, NULL, infoLog);
-			std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
-			return -1;
+			GLchar infoLog[512];
+
+			// Print Compile Error
+			if (!success)
+			{
+				glGetShaderInfoLog(eVertexShader, 512, NULL, infoLog);
+				std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
+			}
 		}
+
+		ASSERT(success);
+		if (!success)
+			return false;
 	}
 	
 	return true;
@@ -109,16 +112,17 @@ bool ShaderMgr::LinkProgram(GLuint shaderProgram)
 	glLinkProgram(shaderProgram);
 	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
 
-	_ASSERT(success != 0);
-
 	if (!bIsOpenCompileErrorLog)
 		return success;
 
 	// Print Link Error
 	if (!success) {
 		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-		return -1;
+		std::cout << "ERROR::SHADER::LINK_FAILED\n" << infoLog << std::endl;
 	}
+
+	ASSERT(success);
+	return success;
 }
 
 

@@ -29,9 +29,9 @@ void UpdateBackupColor(Color_t* pColor)
 	pColor->fBlue	= rand() / (float)RAND_MAX;
 	pColor->fAlpha	= 1.0f;*/
 
-	pColor->fRed	= (pColor->fRed <= 0.0f) ? 1.0f: pColor->fRed - 0.01f;
-	pColor->fGreen	= (pColor->fGreen <= 0.0f) ? 1.0f : pColor->fGreen - 0.02f;
-	pColor->fBlue	= (pColor->fBlue <= 0.0f) ? 1.0f : pColor->fBlue - 0.03f;
+	pColor->fRed	= (pColor->fRed <= 0.0f)	? 1.0f : pColor->fRed - 0.01f;
+	pColor->fGreen	= (pColor->fGreen <= 0.0f)	? 1.0f : pColor->fGreen - 0.02f;
+	pColor->fBlue	= (pColor->fBlue <= 0.0f)	? 1.0f : pColor->fBlue - 0.03f;
 	pColor->fAlpha	= 1.0f;
 }
 
@@ -39,6 +39,15 @@ void RenderBackup(float nRed, float nGreen, float nBlue,float nAlpha, GLbitfield
 {
 	glClearColor(nRed, nGreen, nBlue, nAlpha);
 	glClear(bufferMask);
+}
+
+void UpdateUniformVariable(GLuint shaderProgram)
+{
+	GLfloat timeValue = glfwGetTime();
+	GLfloat greenValue = (sin(timeValue) / 2) + 0.5;
+	GLint vertexColorLocation = glGetUniformLocation(shaderProgram, "vertexColor");
+	glUseProgram(shaderProgram);
+	glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
 }
 
 int main()
@@ -55,11 +64,12 @@ int main()
 	GLuint				shaderProgram;
 
 	ShaderMgr			shaderMgr;
+
 	// Triangle Vertex Info (position only)
-	GLfloat vertices[] = {
-		-0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		0.0f,  0.5f, 0.0f
+	const GLfloat vertices[] = {
+		 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // ÓÒÏÂ
+		-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // ×óÏÂ
+		 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f	 // ¶¥²¿
 	};
 
 	// Base ENV config
@@ -104,62 +114,6 @@ int main()
 	if (!shaderMgr.LinkProgram(shaderProgram))
 		return -1;
 
-	//// Compile vertex shader
-	//vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	//const char* szVertexShaderText = 
-	//	"#version 330 core\nlayout(location = 0) in vec3 position;\nvoid main()\n{\ngl_Position = vec4(position.x, position.y, position.z, 1.0);\n}";
-
-	//const GLchar* vertexShaderSource	= szVertexShaderText;
-	//const GLchar* vertexShaderArray[1]	= { vertexShaderSource };
-
-	//glShaderSource(vertexShader, 1, vertexShaderArray, nullptr);
-	//glCompileShader(vertexShader);
-
-	//GLint success;
-	//GLchar infoLog[512];
-	//glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-
-	//// Print Compile Error
-	//if (!success)
-	//{
-	//	glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-	//	std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-	//	return -1;
-	//}
-
-	//// Compile Fragment shader
-	//const GLchar* szFragmentShaderText = "#version 330 core\nout vec4 color;\nvoid main()\n{\ncolor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n}";
-	//const GLchar* fragmentShaderSource[1] = { szFragmentShaderText };
-
-	//GLuint fragmentShader;
-	//fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	//glShaderSource(fragmentShader, 1, fragmentShaderSource, nullptr);
-	//glCompileShader(fragmentShader);
-
-	//glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-
-	//// Print Compile Error
-	//if (!success)
-	//{
-	//	glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-	//	std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-	//	return -1;
-	//}
-
-	//// Link shader program
-	//shaderProgram = glCreateProgram();
-	//
-	//glAttachShader(shaderProgram, vertexShader);
-	//glAttachShader(shaderProgram, fragmentShader);
-	//glLinkProgram(shaderProgram);
-
-	//// Print Link Error
-	//glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-	//if (!success) {
-	//	glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-	//	return -1;
-	//}
-
 	// Use Program Object
 	glUseProgram(shaderProgram);
 
@@ -188,8 +142,14 @@ int main()
 		GLsizei stride, 
 		const void* pointer);
 	*/
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+
+	// Set position format
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
+
+	// Set color format
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
 
 	// Unbind VAO
 	glBindVertexArray(0);
@@ -198,7 +158,9 @@ int main()
 	{
 		glfwPollEvents();
 
-#pragma region Render BackupGround
+		// Update uniform variable to change triangle color.
+		// UpdateUniformVariable(shaderProgram);
+
 		if (GetTickCount64() - nLastUpdateBackupColorTime > 100)
 		{
 			UpdateBackupColor(pBackupColor);
@@ -208,15 +170,12 @@ int main()
 			pBackupColor->fRed, pBackupColor->fGreen, pBackupColor->fBlue, pBackupColor->fAlpha,
 			GL_COLOR_BUFFER_BIT
 		);
-#pragma endregion
 
-#pragma region Render Triangle
 		// Now we can use VAO to draw triangle.
 		glUseProgram(shaderProgram);
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 		glBindVertexArray(0);
-#pragma endregion
 
 		glfwSwapBuffers(pWindow);
 	}
