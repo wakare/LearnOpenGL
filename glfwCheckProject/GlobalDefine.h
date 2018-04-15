@@ -1,3 +1,4 @@
 #pragma once
 
-#define ASSERT(x) _ASSERT((x))
+#include <assert.h>
+#define ASSERT(x) assert((x))

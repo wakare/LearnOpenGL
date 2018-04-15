@@ -2,14 +2,15 @@
 #include <iostream>
 #include <Windows.h>
 
-// GLEW
+// GLEW & GLFW
 #define GLEW_STATIC
 #include <GL/glew.h>
-// GLFW
 #include <GLFW/glfw3.h>
 
+#include "GlobalDefine.h"
 #include "Color.h"
 #include "ShaderMgr.h"
+#include "Texture.h"
 
 // GLFW Key callBack function
 // nAction = {`GLFW_PRESS`, `GLFW_RELEASE`, `GLFW_REPEAT`}
@@ -41,13 +42,22 @@ void RenderBackup(float nRed, float nGreen, float nBlue,float nAlpha, GLbitfield
 	glClear(bufferMask);
 }
 
-void UpdateUniformVariable(GLuint shaderProgram)
+void UpdateUniformVariable(GLuint shaderProgram, const char* uniformName)
 {
 	GLfloat timeValue = glfwGetTime();
-	GLfloat greenValue = (sin(timeValue) / 2) + 0.5;
-	GLint vertexColorLocation = glGetUniformLocation(shaderProgram, "vertexColor");
+	GLfloat uniformValue = (sin(timeValue) / 2);
+	GLint vertexColorLocation = glGetUniformLocation(shaderProgram, uniformName);
 	glUseProgram(shaderProgram);
-	glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+	glUniform1f(vertexColorLocation, uniformValue);
+}
+
+bool AddTexture(std::vector<std::shared_ptr<Texture>>& TextureVec, const char* szTexturePath)
+{
+	std::shared_ptr<Texture> textureObject = std::make_shared<Texture>(szTexturePath);
+	ASSERT(textureObject != nullptr);
+	TextureVec.push_back(textureObject);
+
+	return true;
 }
 
 int main()
@@ -63,8 +73,28 @@ int main()
 	GLint				success;
 	GLchar				infoLog[512];
 	GLuint				shaderProgram;
-
 	ShaderMgr			shaderMgr;
+
+	std::vector<std::shared_ptr<Texture>>	textureVec;
+
+	// Load Resource
+	const char* szTexturePath = "Resources/wall.jpg";
+	if (!AddTexture(textureVec, szTexturePath))
+	{
+		std::cout << "Load resource failed, file path = " << szTexturePath << std::endl;
+		return -1;
+	}
+
+	GLuint* texture = (GLuint *) malloc(sizeof(GLuint) * textureVec.size());
+	glGenTextures(textureVec.size(), texture);
+	for (int nIndex = 0; nIndex < textureVec.size(); nIndex ++)
+	{
+		glBindTexture(GL_TEXTURE_2D, texture[nIndex]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
+			textureVec[nIndex]->m_nWidth, textureVec[nIndex]->m_nHeight, 
+			0, GL_RGB, GL_UNSIGNED_BYTE, textureVec[nIndex]->m_pTextureData);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
 
 	// Triangle Vertex Info (position only)
 	const GLfloat vertices[] = {
@@ -75,39 +105,40 @@ int main()
 		 1.0f,  0.5f, 0.0f,  0.5f, 0.5f, 0.5f	 // Test vertex for draw triangle strip
 	};
 
-	// Base ENV config
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-
-	// Mac need this statement
-	// glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-
-	pWindow = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr);
-	if (pWindow == nullptr)
+	// Base environment config
 	{
-		std::cout << "Failed to create GLFW window" << std::endl;
-		glfwTerminate();
-		return -1;
+		glfwInit();
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+
+		// Mac need this statement
+		// glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
+		pWindow = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr);
+		if (pWindow == nullptr)
+		{
+			std::cout << "Failed to create GLFW window" << std::endl;
+			glfwTerminate();
+			return -1;
+		}
+		glfwMakeContextCurrent(pWindow);
+
+		glewExperimental = GL_TRUE;
+		if (glewInit() != GLEW_OK)
+		{
+			std::cout << "Failed to initialize GLEW" << std::endl;
+			return -1;
+		}
+
+		glfwGetFramebufferSize(pWindow, &nWidth, &nHeight);
+		glViewport(0, 0, nWidth, nHeight);
+		glfwSetKeyCallback(pWindow, KeyCallBackFunction);
 	}
-	glfwMakeContextCurrent(pWindow);
 
-	glewExperimental = GL_TRUE;
-	if (glewInit() != GLEW_OK)
-	{
-		std::cout << "Failed to initialize GLEW" << std::endl;
-		return -1;
-	}
-	
-	glfwGetFramebufferSize(pWindow, &nWidth, &nHeight);
-
-	glViewport(0, 0, nWidth, nHeight);
-
-	glfwSetKeyCallback(pWindow, KeyCallBackFunction);
-
-	{	// Init Shader
+	// Init Shader
+	{	
 		if (!shaderMgr.Init())
 			return -1;
 
@@ -122,7 +153,8 @@ int main()
 		glUseProgram(shaderProgram);
 	}
 
-	{	// Define VAO which necessary to core profile
+	// Define VAO which necessary to core profile
+	{	
 		glGenVertexArrays(1, &VAO);
 		glBindVertexArray(VAO);
 
@@ -143,24 +175,25 @@ int main()
 			const void* pointer);
 		*/
 
-		// Set position format
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+		// Set color format
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 		glEnableVertexAttribArray(0);
 
-		// Set color format
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+		// Set position format
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
 		glEnableVertexAttribArray(1);
 
 		// Unbind VAO
 		glBindVertexArray(0);
 	}
 
+	// Main Render Loop 
 	while (!glfwWindowShouldClose(pWindow))
 	{
 		glfwPollEvents();
 
 		// Update uniform variable to change triangle color.
-		// UpdateUniformVariable(shaderProgram);
+		UpdateUniformVariable(shaderProgram, "moveVariable");
 
 		if (GetTickCount64() - nLastUpdateBackupColorTime > 100)
 		{
