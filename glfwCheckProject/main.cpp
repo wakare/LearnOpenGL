@@ -59,6 +59,7 @@ int main()
 	GLFWwindow*			pWindow						= nullptr;
 	Color_t*			pBackupColor				= new Color_t();
 	GLuint				VBO;
+	GLuint				VAO;
 	GLint				success;
 	GLchar				infoLog[512];
 	GLuint				shaderProgram;
@@ -67,9 +68,11 @@ int main()
 
 	// Triangle Vertex Info (position only)
 	const GLfloat vertices[] = {
-		 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // 右下
 		-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // 左下
-		 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f	 // 顶部
+		 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // 右下
+		 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f,	 // 顶部
+		 // for triangle strip
+		 1.0f,  0.5f, 0.0f,  0.5f, 0.5f, 0.5f	 // Test vertex for draw triangle strip
 	};
 
 	// Base ENV config
@@ -104,55 +107,53 @@ int main()
 
 	glfwSetKeyCallback(pWindow, KeyCallBackFunction);
 
-	if (!shaderMgr.Init())
-		return -1;
+	{	// Init Shader
+		if (!shaderMgr.Init())
+			return -1;
 
-	if (!shaderMgr.CompileShader())
-		return -1;
+		if (!shaderMgr.CompileShader())
+			return -1;
 
-	shaderProgram = glCreateProgram();
-	if (!shaderMgr.LinkProgram(shaderProgram))
-		return -1;
+		shaderProgram = glCreateProgram();
+		if (!shaderMgr.LinkProgram(shaderProgram))
+			return -1;
 
-	// Use Program Object
-	glUseProgram(shaderProgram);
+		// Use Program Object
+		glUseProgram(shaderProgram);
+	}
 
-	// Clear no use object
-	glDeleteShader(eVertexShader);
-	glDeleteShader(eFragmentShader);
+	{	// Define VAO which necessary to core profile
+		glGenVertexArrays(1, &VAO);
+		glBindVertexArray(VAO);
 
-	// Define VAO which necessary to core profile
-	GLuint VAO;
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
+		// Create a buffer to store vertex.
+		glGenBuffers(1, &VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	// Create a buffer to store vertex.
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		// Bind the triangle vertex data to buffer.
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	// Bind the triangle vertex data to buffer.
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		// Tell OpenGL how to explain vertex data
+		/* glVertexAttribPointer(
+			GLuint index,
+			GLint size,
+			GLenum type,
+			GLboolean normalized,
+			GLsizei stride,
+			const void* pointer);
+		*/
 
-	// Tell OpenGL how to explain vertex data
-	/* glVertexAttribPointer(
-		GLuint index,			
-		GLint size, 
-		GLenum type, 
-		GLboolean normalized, 
-		GLsizei stride, 
-		const void* pointer);
-	*/
+		// Set position format
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(0);
 
-	// Set position format
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
+		// Set color format
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(1);
 
-	// Set color format
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(1);
-
-	// Unbind VAO
-	glBindVertexArray(0);
+		// Unbind VAO
+		glBindVertexArray(0);
+	}
 
 	while (!glfwWindowShouldClose(pWindow))
 	{
@@ -174,7 +175,7 @@ int main()
 		// Now we can use VAO to draw triangle.
 		glUseProgram(shaderProgram);
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
 
 		glfwSwapBuffers(pWindow);
