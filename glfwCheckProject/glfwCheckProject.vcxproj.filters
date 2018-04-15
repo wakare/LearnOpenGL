@@ -29,5 +29,16 @@
     <ClInclude Include="Color.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="GlobalDefine.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\FragmentShader.glsl">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="Resources\VertexShader.glsl">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>
