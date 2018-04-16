@@ -10,15 +10,23 @@
 
 #include "Color.h"
 #include "ShaderMgr.h"
+#include "GlobalState.h"
 
 // GLFW Key callBack function
 // nAction = {`GLFW_PRESS`, `GLFW_RELEASE`, `GLFW_REPEAT`}
 void KeyCallBackFunction(GLFWwindow* pWindow,int nKey,int nScanCode,int nAction,int nMode)
 {
 	// Esc => Exit Application
-	if (nKey == GLFW_KEY_ESCAPE && nAction == GLFW_RELEASE)
+	if (nKey == GLFW_KEY_ESCAPE && nAction == GLFW_PRESS)
 	{
 		glfwSetWindowShouldClose(pWindow, GL_TRUE);
+	}
+
+	if (nKey == GLFW_KEY_SPACE && nAction == GLFW_PRESS)
+	{
+		if ((GlobalState.Instance()->m_ePolygonMode) == GL_FILL)
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 	}
 }
 
@@ -65,7 +73,7 @@ int main()
 
 	ShaderMgr			shaderMgr;
 
-	// Triangle Vertex Info (position only)
+	// Triangle Vertex Info (position & vertexColor)
 	const GLfloat vertices[] = {
 		 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // сроб
 		-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // вСоб
