@@ -5,7 +5,7 @@
 ShaderMgr::ShaderMgr()
 {
 	m_szShaderPathVec.clear();
-	m_szShaderTextVec.clear();
+	m_shaderObjects.clear();
 
 	if (!Init())
 		return;
@@ -27,20 +27,12 @@ bool ShaderMgr::InitShaderPath()
 	return true;
 }
 
-bool ShaderMgr::InitShaderSourceFile()
+bool ShaderMgr::InitShaderObject()
 {
-	std::ifstream shaderReadStream;
 	for (auto szShaderPath : m_szShaderPathVec)
 	{
-		shaderReadStream.open(szShaderPath.second, std::ios::in);
-		if (shaderReadStream.bad())
-			continue;
-
-		std::string szSourceText((std::istreambuf_iterator<char>(shaderReadStream)),
-			std::istreambuf_iterator<char>());
-		m_szShaderTextVec.insert(std::make_pair(szShaderPath.first, std::make_shared<std::string>(szSourceText)));
-
-		shaderReadStream.close();
+		m_shaderObjects.insert(
+			std::make_pair(szShaderPath.first, std::make_shared<Shader>(szShaderPath.first, szShaderPath.second)));
 	}
 
 	return true;
@@ -51,23 +43,29 @@ bool ShaderMgr::Init()
 	if (!InitShaderPath())
 		return false;
 
-	if (!InitShaderSourceFile())
+	if (!InitShaderObject())
 		return false;
 }
 
 bool ShaderMgr::UnInit()
 {
+	for (auto shaderObject : m_shaderObjects)
+	{
+		// TODO:Release shared_ptr<>? 
+	}
+
+	m_shaderObjects.clear();
 	return true;
 }
 
 bool ShaderMgr::CompileShader()
 {
-	for (auto shaderPair : m_szShaderTextVec)
+	for (auto shaderPair : m_shaderObjects)
 	{
 		auto shader = glCreateShader(shaderPair.first);
 		GLint success;
 
-		const GLchar* ShaderSource = shaderPair.second->c_str();
+		const GLchar* ShaderSource = shaderPair.second->m_sShaderText.c_str();
 		const GLchar* vertexShaderArray[1] = { ShaderSource };
 
 		glShaderSource(shader, 1, vertexShaderArray, nullptr);
