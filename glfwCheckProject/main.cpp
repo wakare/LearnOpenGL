@@ -99,10 +99,16 @@ int main()
 	for (int nIndex = 0; nIndex < textureVec.size(); nIndex ++)
 	{
 		glBindTexture(GL_TEXTURE_2D, texture[nIndex]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
-			textureVec[nIndex]->m_nWidth, textureVec[nIndex]->m_nHeight, 
-			0, GL_RGB, GL_UNSIGNED_BYTE, textureVec[nIndex]->m_pTextureData);
-		glGenerateMipmap(GL_TEXTURE_2D);
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+				textureVec[nIndex]->m_nWidth, textureVec[nIndex]->m_nHeight,
+				0, GL_RGB, GL_UNSIGNED_BYTE, textureVec[nIndex]->m_pTextureData);
+			glGenerateMipmap(GL_TEXTURE_2D);
+		}
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		// Clear texture memory
+		textureVec[nIndex]->DestroyTexture();
 	}
 
 	// Triangle Vertex Info (position only)

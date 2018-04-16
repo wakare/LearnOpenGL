@@ -10,4 +10,7 @@ public:
 	unsigned char* m_pTextureData;
 
 	Texture(const char* szTexturePath);
+	~Texture();
+
+	void DestroyTexture();
 };
