@@ -86,38 +86,14 @@ int main()
 	// Triangle Vertex Info (position & vertexColor)
 	std::vector<std::shared_ptr<Texture>>	textureVec;
 
-	// Load Resource
-	const char* szTexturePath = "Resources/wall.jpg";
-	if (!AddTexture(textureVec, szTexturePath))
-	{
-		std::cout << "Load resource failed, file path = " << szTexturePath << std::endl;
-		return -1;
-	}
-
-	GLuint* texture = (GLuint *) malloc(sizeof(GLuint) * textureVec.size());
-	glGenTextures(textureVec.size(), texture);
-	for (int nIndex = 0; nIndex < textureVec.size(); nIndex ++)
-	{
-		glBindTexture(GL_TEXTURE_2D, texture[nIndex]);
-		{
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
-				textureVec[nIndex]->m_nWidth, textureVec[nIndex]->m_nHeight,
-				0, GL_RGB, GL_UNSIGNED_BYTE, textureVec[nIndex]->m_pTextureData);
-			glGenerateMipmap(GL_TEXTURE_2D);
-		}
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		// Clear texture memory
-		textureVec[nIndex]->DestroyTexture();
-	}
-
 	// Triangle Vertex Info (position only)
+	// vertexCoordination	vertexColor			textureCoordination
 	const GLfloat vertices[] = {
-		-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // 左下
-		 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // 右下
-		 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f,	 // 顶部
+		-0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,	0.0f, 0.0f,  // 左下
+		 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,   1.0f, 0.0f,  // 右下
+		-0.5f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f,	0.0f, 1.0f,  // 顶部
 		 // for triangle strip
-		 1.0f,  0.5f, 0.0f,  0.5f, 0.5f, 0.5f	 // Test vertex for draw triangle strip
+		 0.5f,  0.5f, 0.0f, 0.5f, 0.5f, 0.5f,	1.0f, 1.0f	 // Test vertex for draw triangle strip
 	};
 
 	// Base environment config
@@ -151,6 +127,62 @@ int main()
 		glViewport(0, 0, nWidth, nHeight);
 		glfwSetKeyCallback(pWindow, KeyCallBackFunction);
 	}
+
+	// Load Resource
+	const char* szTexturePath = "Resources/wall.jpg";
+	if (!AddTexture(textureVec, szTexturePath))
+	{
+		std::cout << "[ERROR] Load resource failed, file path = " << szTexturePath << std::endl;
+		return -1;
+	}
+
+	//GLuint* texture = (GLuint *) malloc(sizeof(GLuint) * textureVec.size());
+	//if (texture == nullptr)
+	//{
+	//std::cout << "[ERROR] Malloc texture memory failed" << std::endl;
+	//return -1;
+	//}
+	GLuint texture;
+
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	int width, height;
+	unsigned char* image = SOIL_load_image(szTexturePath, &width, &height, 0, SOIL_LOAD_RGB);
+
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+	//	textureVec[0]->m_nWidth, textureVec[0]->m_nHeight,
+	//	0, GL_RGB, GL_UNSIGNED_BYTE, textureVec[0]->m_pTextureData);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	textureVec[0]->DestroyTexture();
+
+	/*for (int nIndex = 0; nIndex < textureVec.size(); nIndex ++)
+	{
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+	textureVec[nIndex]->m_nWidth, textureVec[nIndex]->m_nHeight,
+	0, GL_RGB, GL_UNSIGNED_BYTE, textureVec[nIndex]->m_pTextureData);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	//glGenerateMipmap(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// Clear texture memory
+	textureVec[nIndex]->DestroyTexture();
+	}*/
 
 	// Init Shader
 	{	
@@ -190,13 +222,17 @@ int main()
 			const void* pointer);
 		*/
 
-		// Set color format
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+		// Set position format
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
 		glEnableVertexAttribArray(0);
 
-		// Set position format
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+		// Set color format
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 		glEnableVertexAttribArray(1);
+		
+		// Set texture format
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(2);
 
 		// Unbind VAO
 		glBindVertexArray(0);
@@ -222,6 +258,7 @@ int main()
 
 		// Now we can use VAO to draw triangle.
 		glUseProgram(shaderProgram);
+		glBindTexture(GL_TEXTURE_2D, texture);
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
