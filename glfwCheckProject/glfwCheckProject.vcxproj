@@ -144,6 +144,7 @@
     <None Include="Resources\VertexShader.glsl" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Resources\awesomeface.png" />
     <Image Include="Resources\wall.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

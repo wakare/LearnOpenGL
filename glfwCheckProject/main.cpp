@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <Windows.h>
+#include <string>
 
 // GLEW & GLFW
 #define GLEW_STATIC
@@ -26,7 +27,7 @@ void KeyCallBackFunction(GLFWwindow* pWindow,int nKey,int nScanCode,int nAction,
 	if (nKey == GLFW_KEY_SPACE && nAction == GLFW_PRESS)
 	{
 		//if ((GlobalState.Instance()->m_ePolygonMode) == GL_FILL)
-		//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		// 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	}
 }
@@ -83,6 +84,8 @@ int main()
 	GLuint				shaderProgram;
 	ShaderMgr			shaderMgr;
 
+	GLuint*				texture;
+
 	// Triangle Vertex Info (position & vertexColor)
 	std::vector<std::shared_ptr<Texture>>	textureVec;
 
@@ -136,53 +139,37 @@ int main()
 		return -1;
 	}
 
-	//GLuint* texture = (GLuint *) malloc(sizeof(GLuint) * textureVec.size());
-	//if (texture == nullptr)
-	//{
-	//std::cout << "[ERROR] Malloc texture memory failed" << std::endl;
-	//return -1;
-	//}
-	GLuint texture;
-
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-	int width, height;
-	unsigned char* image = SOIL_load_image(szTexturePath, &width, &height, 0, SOIL_LOAD_RGB);
-
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
-	//	textureVec[0]->m_nWidth, textureVec[0]->m_nHeight,
-	//	0, GL_RGB, GL_UNSIGNED_BYTE, textureVec[0]->m_pTextureData);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	textureVec[0]->DestroyTexture();
-
-	/*for (int nIndex = 0; nIndex < textureVec.size(); nIndex ++)
+	szTexturePath = "Resources/awesomeface.png";
+	if (!AddTexture(textureVec, szTexturePath))
 	{
-	glBindTexture(GL_TEXTURE_2D, texture);
+		std::cout << "[ERROR] Load resource failed, file path = " << szTexturePath << std::endl;
+		return -1;
+	}
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
-	textureVec[nIndex]->m_nWidth, textureVec[nIndex]->m_nHeight,
-	0, GL_RGB, GL_UNSIGNED_BYTE, textureVec[nIndex]->m_pTextureData);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	texture = (GLuint *) malloc(sizeof(GLuint) * textureVec.size());
+	if (texture == nullptr)
+	{
+		std::cout << "[ERROR] Malloc texture memory failed" << std::endl;
+		return -1;
+	}
 
-	//glGenerateMipmap(GL_TEXTURE_2D);
+	for (int nIndex = 0; nIndex < textureVec.size(); nIndex++)
+	{
+		glBindTexture(GL_TEXTURE_2D, texture[nIndex]);
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+				textureVec[nIndex]->m_nWidth, textureVec[nIndex]->m_nHeight,
+				0, GL_RGB, GL_UNSIGNED_BYTE, textureVec[nIndex]->m_pTextureData);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glBindTexture(GL_TEXTURE_2D, 0);
+			glGenerateMipmap(GL_TEXTURE_2D);
+		}
+		glBindTexture(GL_TEXTURE_2D, 0);
 
-	// Clear texture memory
-	textureVec[nIndex]->DestroyTexture();
-	}*/
+		// Clear texture memory
+		textureVec[nIndex]->DestroyTexture();
+	}
 
 	// Init Shader
 	{	
@@ -251,20 +238,34 @@ int main()
 			UpdateBackupColor(pBackupColor);
 			nLastUpdateBackupColorTime = GetTickCount64();
 		}
+
 		RenderBackup(
 			pBackupColor->fRed, pBackupColor->fGreen, pBackupColor->fBlue, pBackupColor->fAlpha,
 			GL_COLOR_BUFFER_BIT
 		);
 
 		// Now we can use VAO to draw triangle.
+		for (int nIndex = 0; nIndex < textureVec.size(); nIndex++)
+		{
+			// Activate texture unit before bind.
+			glActiveTexture(GL_TEXTURE0 + nIndex); 
+			glBindTexture(GL_TEXTURE_2D, texture[nIndex]);
+			std::string uniformVarName = "ourTexture";
+			uniformVarName.append(std::to_string(nIndex + 1));
+			glUniform1i(glGetUniformLocation(shaderProgram, uniformVarName.c_str()), nIndex);
+		}
+
 		glUseProgram(shaderProgram);
-		glBindTexture(GL_TEXTURE_2D, texture);
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
 
 		glfwSwapBuffers(pWindow);
 	}
+
+	// Properly de-allocate all resources once they've outlived their purpose
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
 
 	glfwTerminate();
 	return 0;
