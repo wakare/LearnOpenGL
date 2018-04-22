@@ -27,7 +27,9 @@ void KeyCallBackFunction(GLFWwindow* pWindow,int nKey,int nScanCode,int nAction,
 	if (nKey == GLFW_KEY_SPACE && nAction == GLFW_PRESS)
 	{
 		//if ((GlobalState.Instance()->m_ePolygonMode) == GL_FILL)
-		// 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+		if (GlobalState.Instance())
 
 	}
 }
@@ -45,7 +47,7 @@ void UpdateBackupColor(Color_t* pColor)
 	pColor->fAlpha	= 1.0f;
 }
 
-void RenderBackup(float nRed, float nGreen, float nBlue,float nAlpha, GLbitfield bufferMask)
+void RenderBackupGround(float nRed, float nGreen, float nBlue,float nAlpha, GLbitfield bufferMask)
 {
 	glClearColor(nRed, nGreen, nBlue, nAlpha);
 	glClear(bufferMask);
@@ -86,10 +88,10 @@ int main()
 
 	GLuint*				texture;
 
-	// Triangle Vertex Info (position & vertexColor)
+	// Triangle Vertex Info (position & vertexColor).
 	std::vector<std::shared_ptr<Texture>>	textureVec;
 
-	// Triangle Vertex Info (position only)
+	// Triangle Vertex Info (position only).
 	// vertexCoordination	vertexColor			textureCoordination
 	const GLfloat vertices[] = {
 		-0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,	0.0f, 0.0f,  // ×óÏÂ
@@ -99,7 +101,7 @@ int main()
 		 0.5f,  0.5f, 0.0f, 0.5f, 0.5f, 0.5f,	1.0f, 1.0f	 // Test vertex for draw triangle strip
 	};
 
-	// Base environment config
+	// Base environment config.
 	{
 		glfwInit();
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -107,7 +109,7 @@ int main()
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-		// Mac need this statement
+		// Mac need this statement.
 		// glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 		pWindow = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr);
@@ -131,7 +133,7 @@ int main()
 		glfwSetKeyCallback(pWindow, KeyCallBackFunction);
 	}
 
-	// Load Resource
+	// Load Resource.
 	const char* szTexturePath = "Resources/wall.jpg";
 	if (!AddTexture(textureVec, szTexturePath))
 	{
@@ -152,7 +154,11 @@ int main()
 		std::cout << "[ERROR] Malloc texture memory failed" << std::endl;
 		return -1;
 	}
+	
+	// Generate texture object.
+	glGenTextures(textureVec.size(), texture);
 
+	// Bind texture data to texture object.
 	for (int nIndex = 0; nIndex < textureVec.size(); nIndex++)
 	{
 		glBindTexture(GL_TEXTURE_2D, texture[nIndex]);
@@ -171,7 +177,7 @@ int main()
 		textureVec[nIndex]->DestroyTexture();
 	}
 
-	// Init Shader
+	// Init Shader.
 	{	
 		if (!shaderMgr.Init())
 			return -1;
@@ -184,10 +190,10 @@ int main()
 			return -1;
 
 		// Use Program Object
-		glUseProgram(shaderProgram);
+		// glUseProgram(shaderProgram);
 	}
 
-	// Define VAO which necessary to core profile
+	// Define VAO which necessary to core profile.
 	{	
 		glGenVertexArrays(1, &VAO);
 		glBindVertexArray(VAO);
@@ -225,7 +231,7 @@ int main()
 		glBindVertexArray(0);
 	}
 
-	// Main Render Loop 
+	// Main Render Loop.
 	while (!glfwWindowShouldClose(pWindow))
 	{
 		glfwPollEvents();
@@ -239,11 +245,12 @@ int main()
 			nLastUpdateBackupColorTime = GetTickCount64();
 		}
 
-		RenderBackup(
+		RenderBackupGround(
 			pBackupColor->fRed, pBackupColor->fGreen, pBackupColor->fBlue, pBackupColor->fAlpha,
 			GL_COLOR_BUFFER_BIT
 		);
 
+		glUseProgram(shaderProgram);
 		// Now we can use VAO to draw triangle.
 		for (int nIndex = 0; nIndex < textureVec.size(); nIndex++)
 		{
@@ -254,8 +261,7 @@ int main()
 			uniformVarName.append(std::to_string(nIndex + 1));
 			glUniform1i(glGetUniformLocation(shaderProgram, uniformVarName.c_str()), nIndex);
 		}
-
-		glUseProgram(shaderProgram);
+		
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
@@ -263,7 +269,7 @@ int main()
 		glfwSwapBuffers(pWindow);
 	}
 
-	// Properly de-allocate all resources once they've outlived their purpose
+	// Properly de-allocate all resources once they've outlived their purpose.
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
 
