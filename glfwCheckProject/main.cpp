@@ -1,18 +1,19 @@
 #pragma once
 #include <iostream>
-#include <Windows.h>
+#include <windows.h>
 #include <string>
 
-// GLEW & GLFW
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #include "Color.h"
+#include "Transform.h"
 #include "GlobalDefine.h"
 #include "GlobalState.h"
 #include "ShaderMgr.h"
 #include "TextureMgr.h"
+#include "FPSPrinter.h"
 
 // Global variables declaration
 static float fFaceAlpha = 0.2f;
@@ -29,9 +30,6 @@ void KeyCallBackFunction(GLFWwindow* pWindow,int nKey,int nScanCode,int nAction,
 
 	if (nKey == GLFW_KEY_SPACE && nAction == GLFW_PRESS)
 	{
-		//if ((GlobalState.Instance()->m_ePolygonMode) == GL_FILL)
-		//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
 		if (GlobalState::Instance()->m_ePolygonMode == GL_FILL)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -58,19 +56,35 @@ void UpdateBackupColor(Color_t* pColor)
 	pColor->fAlpha	= 1.0f;
 }
 
+void UpdateTransformMatrix(Transform& transform)
+{
+	transform.Rotate(2.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+}
+
 void RenderBackupGround(float nRed, float nGreen, float nBlue,float nAlpha, GLbitfield bufferMask)
 {
 	glClearColor(nRed, nGreen, nBlue, nAlpha);
 	glClear(bufferMask);
 }
 
-void UpdateUniformVariable(GLuint shaderProgram, const char* uniformName, float fStartValue = 0.0f, float fEndValue = 1.0f)
+void SetUniformVariableMatrix(GLuint shaderProgram, const char* uniformName, glm::mat4 transformMatrix)
+{
+	GLint vertexColorLocation = glGetUniformLocation(shaderProgram, uniformName);
+	glUseProgram(shaderProgram);
+	glUniformMatrix4fv(vertexColorLocation, 1, GL_FALSE, glm::value_ptr(transformMatrix));
+}
+
+void UpdateUniformVariable1f(GLuint shaderProgram, const char* uniformName, float fStartValue = 0.0f, float fEndValue = 1.0f, 
+	std::function<float()> function = []()
+	{
+		GLfloat timeValue = glfwGetTime();
+		return sin(timeValue);
+	})
 {
 	float fAvgValue = (fStartValue + fEndValue) / 2;
 	float fScaleValue = (fEndValue - fStartValue) / 2;
 
-	GLfloat timeValue = glfwGetTime();
-	GLfloat uniformValue = fAvgValue + fScaleValue * sin(timeValue);
+	GLfloat uniformValue = fAvgValue + fScaleValue * function();
 	GLint vertexColorLocation = glGetUniformLocation(shaderProgram, uniformName);
 	glUseProgram(shaderProgram);
 	glUniform1f(vertexColorLocation, uniformValue);
@@ -86,15 +100,15 @@ int main()
 	Color_t*			pBackupColor				= new Color_t();
 	GLuint				VBO;
 	GLuint				VAO;
-	GLint				success;
-	GLchar				infoLog[512];
 	GLuint				shaderProgram;
+	GLuint*				texture;
+
+	FPSPrinter			_FPSPrinter;
+	Transform			transform;
 	ShaderMgr			shaderMgr;
 	TextureMgr			textureMgr;
 
-	GLuint*				texture;
-
-	// Triangle Vertex Info (position only).
+	// Triangle Vertex Info 
 	// vertexCoordination	vertexColor			textureCoordination
 	const GLfloat vertices[] = {
 		-0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,	0.0f, 0.0f,  // ×óÏÂ
@@ -118,7 +132,7 @@ int main()
 		pWindow = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr);
 		if (pWindow == nullptr)
 		{
-			std::cout << "Failed to create GLFW window" << std::endl;
+			std::cout << "[ERROR] Failed to create GLFW window" << std::endl;
 			glfwTerminate();
 			return -1;
 		}
@@ -127,7 +141,7 @@ int main()
 		glewExperimental = GL_TRUE;
 		if (glewInit() != GLEW_OK)
 		{
-			std::cout << "Failed to initialize GLEW" << std::endl;
+			std::cout << "[ERROR] Failed to initialize GLEW" << std::endl;
 			return -1;
 		}
 
@@ -179,7 +193,7 @@ int main()
 		}
 		glBindTexture(GL_TEXTURE_2D, 0);
 
-		// Clear texture memory
+		// Clear texture memory.
 		textureMgr.GetTextureVec()[nIndex]->DestroyTexture();
 	}
 
@@ -209,7 +223,7 @@ int main()
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 		// Bind the triangle vertex data to buffer.
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER,  sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 		// Tell OpenGL how to explain vertex data
 		/* glVertexAttribPointer(
@@ -240,12 +254,17 @@ int main()
 	// Main Render Loop.
 	while (!glfwWindowShouldClose(pWindow))
 	{
+		// Send event.
 		glfwPollEvents();
 
-		// Update uniform variable to change triangle color.
-		UpdateUniformVariable(shaderProgram, "fMoveOffset", -0.5f, 0.5f);
-		UpdateUniformVariable(shaderProgram, "fFaceAlpha");
+		// Update uniform variable.
+		UpdateUniformVariable1f(shaderProgram, "fMoveOffset", -0.5f, 0.5f);
+		UpdateUniformVariable1f(shaderProgram, "fFaceAlpha");
 
+		UpdateTransformMatrix(transform);
+		SetUniformVariableMatrix(shaderProgram, "transform", transform.GetTransform());
+
+		// Render backupground.
 		if (GetTickCount64() - nLastUpdateBackupColorTime > 100)
 		{
 			UpdateBackupColor(pBackupColor);
@@ -257,8 +276,8 @@ int main()
 			GL_COLOR_BUFFER_BIT
 		);
 
-		glUseProgram(shaderProgram);
 		// Now we can use VAO to draw triangle.
+		glUseProgram(shaderProgram);
 		for (int nIndex = 0; nIndex < textureMgr.GetTextureCount(); nIndex++)
 		{
 			// Activate texture unit before bind.
@@ -274,6 +293,8 @@ int main()
 		glBindVertexArray(0);
 
 		glfwSwapBuffers(pWindow);
+
+		_FPSPrinter.Update();
 	}
 
 	// Properly de-allocate all resources once they've outlived their purpose.
