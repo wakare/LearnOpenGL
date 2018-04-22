@@ -33,6 +33,9 @@
     <ClCompile Include="GlobalState.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="TextureMgr.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ShaderMgr.h">
@@ -54,6 +57,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="GlobalState.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureMgr.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

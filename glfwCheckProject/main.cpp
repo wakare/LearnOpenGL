@@ -8,11 +8,14 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "GlobalDefine.h"
 #include "Color.h"
-#include "ShaderMgr.h"
+#include "GlobalDefine.h"
 #include "GlobalState.h"
-#include "Texture.h"
+#include "ShaderMgr.h"
+#include "TextureMgr.h"
+
+// Global variables declaration
+static float fFaceAlpha = 0.2f;
 
 // GLFW Key callBack function
 // nAction = {`GLFW_PRESS`, `GLFW_RELEASE`, `GLFW_REPEAT`}
@@ -61,22 +64,16 @@ void RenderBackupGround(float nRed, float nGreen, float nBlue,float nAlpha, GLbi
 	glClear(bufferMask);
 }
 
-void UpdateUniformVariable(GLuint shaderProgram, const char* uniformName)
+void UpdateUniformVariable(GLuint shaderProgram, const char* uniformName, float fStartValue = 0.0f, float fEndValue = 1.0f)
 {
+	float fAvgValue = (fStartValue + fEndValue) / 2;
+	float fScaleValue = (fEndValue - fStartValue) / 2;
+
 	GLfloat timeValue = glfwGetTime();
-	GLfloat uniformValue = (sin(timeValue) / 2);
+	GLfloat uniformValue = fAvgValue + fScaleValue * sin(timeValue);
 	GLint vertexColorLocation = glGetUniformLocation(shaderProgram, uniformName);
 	glUseProgram(shaderProgram);
 	glUniform1f(vertexColorLocation, uniformValue);
-}
-
-bool AddTexture(std::vector<std::shared_ptr<Texture>>& TextureVec, const char* szTexturePath)
-{
-	std::shared_ptr<Texture> textureObject = std::make_shared<Texture>(szTexturePath);
-	ASSERT(textureObject != nullptr);
-	TextureVec.push_back(textureObject);
-
-	return true;
 }
 
 int main()
@@ -93,11 +90,9 @@ int main()
 	GLchar				infoLog[512];
 	GLuint				shaderProgram;
 	ShaderMgr			shaderMgr;
+	TextureMgr			textureMgr;
 
 	GLuint*				texture;
-
-	// Triangle Vertex Info (position & vertexColor).
-	std::vector<std::shared_ptr<Texture>>	textureVec;
 
 	// Triangle Vertex Info (position only).
 	// vertexCoordination	vertexColor			textureCoordination
@@ -143,20 +138,20 @@ int main()
 
 	// Load Resource.
 	const char* szTexturePath = "Resources/wall.jpg";
-	if (!AddTexture(textureVec, szTexturePath))
+	if (!textureMgr.AddTexture(szTexturePath))
 	{
 		std::cout << "[ERROR] Load resource failed, file path = " << szTexturePath << std::endl;
 		return -1;
 	}
 
 	szTexturePath = "Resources/awesomeface.png";
-	if (!AddTexture(textureVec, szTexturePath))
+	if (!textureMgr.AddTexture(szTexturePath))
 	{
 		std::cout << "[ERROR] Load resource failed, file path = " << szTexturePath << std::endl;
 		return -1;
 	}
 
-	texture = (GLuint *) malloc(sizeof(GLuint) * textureVec.size());
+	texture = (GLuint *) malloc(sizeof(GLuint) * textureMgr.GetTextureCount());
 	if (texture == nullptr)
 	{
 		std::cout << "[ERROR] Malloc texture memory failed" << std::endl;
@@ -164,16 +159,19 @@ int main()
 	}
 	
 	// Generate texture object.
-	glGenTextures(textureVec.size(), texture);
+	glGenTextures(textureMgr.GetTextureCount(), texture);
 
 	// Bind texture data to texture object.
-	for (int nIndex = 0; nIndex < textureVec.size(); nIndex++)
+	for (int nIndex = 0; nIndex < textureMgr.GetTextureCount(); nIndex++)
 	{
 		glBindTexture(GL_TEXTURE_2D, texture[nIndex]);
 		{
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
-				textureVec[nIndex]->m_nWidth, textureVec[nIndex]->m_nHeight,
-				0, GL_RGB, GL_UNSIGNED_BYTE, textureVec[nIndex]->m_pTextureData);
+				textureMgr.GetTextureVec()[nIndex]->m_nWidth, textureMgr.GetTextureVec()[nIndex]->m_nHeight,
+				0, GL_RGB, GL_UNSIGNED_BYTE, textureMgr.GetTextureVec()[nIndex]->m_pTextureData);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -182,7 +180,7 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		// Clear texture memory
-		textureVec[nIndex]->DestroyTexture();
+		textureMgr.GetTextureVec()[nIndex]->DestroyTexture();
 	}
 
 	// Init Shader.
@@ -245,7 +243,8 @@ int main()
 		glfwPollEvents();
 
 		// Update uniform variable to change triangle color.
-		UpdateUniformVariable(shaderProgram, "moveVariable");
+		UpdateUniformVariable(shaderProgram, "fMoveOffset", -0.5f, 0.5f);
+		UpdateUniformVariable(shaderProgram, "fFaceAlpha");
 
 		if (GetTickCount64() - nLastUpdateBackupColorTime > 100)
 		{
@@ -260,7 +259,7 @@ int main()
 
 		glUseProgram(shaderProgram);
 		// Now we can use VAO to draw triangle.
-		for (int nIndex = 0; nIndex < textureVec.size(); nIndex++)
+		for (int nIndex = 0; nIndex < textureMgr.GetTextureCount(); nIndex++)
 		{
 			// Activate texture unit before bind.
 			glActiveTexture(GL_TEXTURE0 + nIndex); 
