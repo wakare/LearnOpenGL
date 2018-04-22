@@ -29,8 +29,16 @@ void KeyCallBackFunction(GLFWwindow* pWindow,int nKey,int nScanCode,int nAction,
 		//if ((GlobalState.Instance()->m_ePolygonMode) == GL_FILL)
 		//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-		if (GlobalState.Instance())
-
+		if (GlobalState::Instance()->m_ePolygonMode == GL_FILL)
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			GlobalState::Instance()->m_ePolygonMode = GL_LINE;
+		}
+		else if (GlobalState::Instance()->m_ePolygonMode == GL_LINE)
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			GlobalState::Instance()->m_ePolygonMode = GL_FILL;
+		}
 	}
 }
 

@@ -1,6 +1,11 @@
 #include "GlobalState.h"
 #include <iostream>
 
+// Define static variables
+std::shared_ptr<GlobalState>	GlobalState::m_pInstance;
+std::mutex						GlobalState::m_InstanceLock;
+GLenum							GlobalState::m_ePolygonMode;
+
 bool GlobalState::Init()
 {
 	// TODO: Init variables
@@ -22,7 +27,10 @@ std::shared_ptr<GlobalState> GlobalState::Instance()
 	{
 		m_InstanceLock.lock();
 		if (m_pInstance == nullptr)
-			m_pInstance = std::make_shared<GlobalState>();
+		{
+			auto pGlobalState = new GlobalState();
+			m_pInstance = std::shared_ptr<GlobalState>(pGlobalState);
+		}
 
 		m_InstanceLock.unlock();
 	}
