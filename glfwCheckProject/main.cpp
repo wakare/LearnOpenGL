@@ -15,6 +15,9 @@
 #include "TextureMgr.h"
 #include "FPSPrinter.h"
 
+#define WIDTH		800
+#define HEIGHT		600
+
 // Global variables declaration
 static float fFaceAlpha = 0.2f;
 
@@ -58,7 +61,9 @@ void UpdateBackupColor(Color_t* pColor)
 
 void UpdateTransformMatrix(Transform& transform)
 {
-	transform.Rotate(2.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+	//transform.Scale(0.99f, 0.99f, 1.0f);
+	transform.Rotate(glm::radians(2.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	//transform.Translate(0.02f, 0.0f, 0.0f);
 }
 
 void RenderBackupGround(float nRed, float nGreen, float nBlue,float nAlpha, GLbitfield bufferMask)
@@ -117,7 +122,6 @@ int main()
 		 // for triangle strip
 		 0.5f,  0.5f, 0.0f, 0.5f, 0.5f, 0.5f,	1.0f, 1.0f	 // Test vertex for draw triangle strip
 	};
-
 	// Base environment config.
 	{
 		glfwInit();
@@ -129,7 +133,7 @@ int main()
 		// Mac need this statement.
 		// glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-		pWindow = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr);
+		pWindow = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
 		if (pWindow == nullptr)
 		{
 			std::cout << "[ERROR] Failed to create GLFW window" << std::endl;
@@ -148,6 +152,18 @@ int main()
 		glfwGetFramebufferSize(pWindow, &nWidth, &nHeight);
 		glViewport(0, 0, nWidth, nHeight);
 		glfwSetKeyCallback(pWindow, KeyCallBackFunction);
+	}
+
+	// Init Coordination transform release
+	{
+		glm::mat4 model;
+		model = glm::rotate(model, -55.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+
+		glm::mat4 view;
+		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+		glm::mat4 projection;
+		projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 	}
 
 	// Load Resource.
@@ -251,6 +267,11 @@ int main()
 		glBindVertexArray(0);
 	}
 
+	Transform rotateTransform;
+	Transform translateTransform;
+
+	translateTransform.Translate(1.0f, 0.0f, 0.0f);
+
 	// Main Render Loop.
 	while (!glfwWindowShouldClose(pWindow))
 	{
@@ -261,7 +282,8 @@ int main()
 		UpdateUniformVariable1f(shaderProgram, "fMoveOffset", -0.5f, 0.5f);
 		UpdateUniformVariable1f(shaderProgram, "fFaceAlpha");
 
-		UpdateTransformMatrix(transform);
+		UpdateTransformMatrix(rotateTransform);
+		transform = rotateTransform * translateTransform;
 		SetUniformVariableMatrix(shaderProgram, "transform", transform.GetTransform());
 
 		// Render backupground.

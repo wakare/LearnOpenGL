@@ -12,8 +12,10 @@ private:
 public:
 	Transform();
 	void Rotate(float fRotateAngle, glm::vec3 Axis);
-	void Translation(float fX, float fY, float fZ);
+	void Translate(float fX, float fY, float fZ);
 	void Scale(float fX, float fY, float fZ);
+	const Transform& operator*= (const Transform& otherTransform);
+	Transform operator* (const Transform& otherTransform);
 
 	glm::mat4 GetTransform();
 };
