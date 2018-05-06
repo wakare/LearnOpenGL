@@ -42,7 +42,17 @@ const Transform& Transform::operator*= (const Transform& otherTransform)
 	return (*this);
 }
 
-glm::mat4 Transform::GetTransform()
+glm::mat4 Transform::GetTransformMatrix()
 {
 	return m_transformMatrix;
+}
+
+// Set Projection matrix (fov --> radians)
+bool Transform::SetProjectionTransform(float fov, float aspect, float nearZ, float farZ)
+{
+	// Check 
+	assert(0.0f < nearZ && nearZ < farZ);
+
+	m_transformMatrix = glm::perspective(fov, aspect, nearZ, farZ);
+	return true;
 }

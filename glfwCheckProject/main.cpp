@@ -117,6 +117,7 @@ bool LoadResources(TextureMgr& textureMgr, GLuint*& texture)
 // Base environment config.
 bool Init(GLFWwindow*& pWindow, int nWindowWidth, int nWindowHeight, int nFrameBufferWidth, int nFrameBufferHeight)
 {
+	// Set OpenGL version to 3.3, core profile.
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -276,10 +277,19 @@ int main()
 		glBindVertexArray(0);
 	}
 
-	Transform rotateTransform;
-	Transform translateTransform;
+	Transform modelTransform;
+	modelTransform.Rotate(glm::radians(-50.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
-	translateTransform.Translate(1.0f, 0.0f, 0.0f);
+	Transform viewTransform;
+	viewTransform.Translate(0.0f, 0.0f, -3.0f);
+
+	Transform projTransform;
+	projTransform.SetProjectionTransform(glm::radians(45.0f), (float)nWindowWidth / (float)nWindowHeight, 0.1f, 100.0f);
+
+	//Transform rotateTransform;
+	//Transform translateTransform;
+
+	//translateTransform.Translate(1.0f, 0.0f, 0.0f);
 
 	// Main Render Loop.
 	while (!glfwWindowShouldClose(pWindow))
@@ -291,9 +301,11 @@ int main()
 		UpdateUniformVariable1f(shaderProgram, "fMoveOffset", -0.5f, 0.5f);
 		UpdateUniformVariable1f(shaderProgram, "fFaceAlpha");
 
-		UpdateTransformMatrix(rotateTransform);
-		transform = rotateTransform * translateTransform;
-		SetUniformVariableMatrix(shaderProgram, "transform", transform.GetTransform());
+		//UpdateTransformMatrix(rotateTransform);
+		//transform = rotateTransform * translateTransform;
+		SetUniformVariableMatrix(shaderProgram, "modelMatrix", modelTransform.GetTransformMatrix());
+		SetUniformVariableMatrix(shaderProgram, "viewMatrix", viewTransform.GetTransformMatrix());
+		SetUniformVariableMatrix(shaderProgram, "projectionMatrix", projTransform.GetTransformMatrix());
 
 		// Render backupground.
 		if (GetTickCount64() - nLastUpdateBackupColorTime > 100)
