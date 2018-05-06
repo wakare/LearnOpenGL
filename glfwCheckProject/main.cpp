@@ -15,9 +15,6 @@
 #include "TextureMgr.h"
 #include "FPSPrinter.h"
 
-#define WIDTH		800
-#define HEIGHT		600
-
 // Global variables declaration
 static float fFaceAlpha = 0.2f;
 
@@ -48,11 +45,6 @@ void KeyCallBackFunction(GLFWwindow* pWindow,int nKey,int nScanCode,int nAction,
 
 void UpdateBackupColor(Color_t* pColor)
 {
-	/*pColor->fRed	= rand() / (float)RAND_MAX;
-	pColor->fGreen	= rand() / (float)RAND_MAX;
-	pColor->fBlue	= rand() / (float)RAND_MAX;
-	pColor->fAlpha	= 1.0f;*/
-
 	pColor->fRed	= (pColor->fRed <= 0.0f)	? 1.0f : pColor->fRed - 0.01f;
 	pColor->fGreen	= (pColor->fGreen <= 0.0f)	? 1.0f : pColor->fGreen - 0.02f;
 	pColor->fBlue	= (pColor->fBlue <= 0.0f)	? 1.0f : pColor->fBlue - 0.03f;
@@ -95,10 +87,74 @@ void UpdateUniformVariable1f(GLuint shaderProgram, const char* uniformName, floa
 	glUniform1f(vertexColorLocation, uniformValue);
 }
 
+bool LoadResources(TextureMgr& textureMgr, GLuint*& texture)
+{
+	// Load Resource.
+	const char* szTexturePath = "Resources/wall.jpg";
+	if (!textureMgr.AddTexture(szTexturePath))
+	{
+		std::cout << "[ERROR] Load resource failed, file path = " << szTexturePath << std::endl;
+		return false;
+	}
+
+	szTexturePath = "Resources/awesomeface.png";
+	if (!textureMgr.AddTexture(szTexturePath))
+	{
+		std::cout << "[ERROR] Load resource failed, file path = " << szTexturePath << std::endl;
+		return false;
+	}
+
+	texture = (GLuint *)malloc(sizeof(GLuint) * textureMgr.GetTextureCount());
+	if (texture == nullptr)
+	{
+		std::cout << "[ERROR] Malloc texture memory failed" << std::endl;
+		return false;
+	}
+
+	return true;
+}
+
+// Base environment config.
+bool Init(GLFWwindow*& pWindow, int nWindowWidth, int nWindowHeight, int nFrameBufferWidth, int nFrameBufferHeight)
+{
+	glfwInit();
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+
+	// Mac need this statement.
+	// glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
+	pWindow = glfwCreateWindow(nWindowWidth, nWindowHeight, "LearnOpenGL", nullptr, nullptr);
+	if (pWindow == nullptr)
+	{
+		std::cout << "[ERROR] Failed to create GLFW window" << std::endl;
+		glfwTerminate();
+		return false;
+	}
+	glfwMakeContextCurrent(pWindow);
+
+	glewExperimental = GL_TRUE;
+	if (glewInit() != GLEW_OK)
+	{
+		std::cout << "[ERROR] Failed to initialize GLEW" << std::endl;
+		return false;
+	}
+
+	glfwGetFramebufferSize(pWindow, &nFrameBufferWidth, &nFrameBufferHeight);
+	glViewport(0, 0, nFrameBufferWidth, nFrameBufferHeight);
+	glfwSetKeyCallback(pWindow, KeyCallBackFunction);
+
+	return true;
+}
+
 int main()
 {
-	int					nWidth						= 0;
-	int					nHeight						= 0;
+	const int			nWindowWidth				= 800;
+	const int			nWindowHeight				= 600;
+	int					nFrameBufferWidth			= 0;
+	int					nFrameBufferHeight			= 0;
 	unsigned long long	nLastUpdateBackupColorTime	= GetTickCount64();
 
 	GLFWwindow*			pWindow						= nullptr;
@@ -113,7 +169,7 @@ int main()
 	ShaderMgr			shaderMgr;
 	TextureMgr			textureMgr;
 
-	// Triangle Vertex Info 
+	// Triangle Vertex Info:
 	// vertexCoordination	vertexColor			textureCoordination
 	const GLfloat vertices[] = {
 		-0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,	0.0f, 0.0f,  // ×óÏÂ
@@ -122,39 +178,11 @@ int main()
 		 // for triangle strip
 		 0.5f,  0.5f, 0.0f, 0.5f, 0.5f, 0.5f,	1.0f, 1.0f	 // Test vertex for draw triangle strip
 	};
-	// Base environment config.
-	{
-		glfwInit();
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-		glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-		// Mac need this statement.
-		// glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	if (!Init(pWindow, nWindowWidth, nWindowHeight, nFrameBufferWidth, nFrameBufferHeight))
+		return -1;
 
-		pWindow = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
-		if (pWindow == nullptr)
-		{
-			std::cout << "[ERROR] Failed to create GLFW window" << std::endl;
-			glfwTerminate();
-			return -1;
-		}
-		glfwMakeContextCurrent(pWindow);
-
-		glewExperimental = GL_TRUE;
-		if (glewInit() != GLEW_OK)
-		{
-			std::cout << "[ERROR] Failed to initialize GLEW" << std::endl;
-			return -1;
-		}
-
-		glfwGetFramebufferSize(pWindow, &nWidth, &nHeight);
-		glViewport(0, 0, nWidth, nHeight);
-		glfwSetKeyCallback(pWindow, KeyCallBackFunction);
-	}
-
-	// Init Coordination transform release
+	// Init coordination transform.
 	{
 		glm::mat4 model;
 		model = glm::rotate(model, -55.0f, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -163,31 +191,12 @@ int main()
 		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
 		glm::mat4 projection;
-		projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(45.0f), (float)nWindowWidth / (float)nWindowHeight, 0.1f, 100.0f);
 	}
 
-	// Load Resource.
-	const char* szTexturePath = "Resources/wall.jpg";
-	if (!textureMgr.AddTexture(szTexturePath))
-	{
-		std::cout << "[ERROR] Load resource failed, file path = " << szTexturePath << std::endl;
+	if (!LoadResources(textureMgr, texture))
 		return -1;
-	}
 
-	szTexturePath = "Resources/awesomeface.png";
-	if (!textureMgr.AddTexture(szTexturePath))
-	{
-		std::cout << "[ERROR] Load resource failed, file path = " << szTexturePath << std::endl;
-		return -1;
-	}
-
-	texture = (GLuint *) malloc(sizeof(GLuint) * textureMgr.GetTextureCount());
-	if (texture == nullptr)
-	{
-		std::cout << "[ERROR] Malloc texture memory failed" << std::endl;
-		return -1;
-	}
-	
 	// Generate texture object.
 	glGenTextures(textureMgr.GetTextureCount(), texture);
 
@@ -225,11 +234,11 @@ int main()
 		if (!shaderMgr.LinkProgram(shaderProgram))
 			return -1;
 
-		// Use Program Object
+		// Use Program Object.
 		// glUseProgram(shaderProgram);
 	}
 
-	// Define VAO which necessary to core profile.
+	// Define VAO which necessary in core profile.
 	{	
 		glGenVertexArrays(1, &VAO);
 		glBindVertexArray(VAO);
