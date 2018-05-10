@@ -146,6 +146,7 @@ bool Init(GLFWwindow*& pWindow, int nWindowWidth, int nWindowHeight, int nFrameB
 	glfwGetFramebufferSize(pWindow, &nFrameBufferWidth, &nFrameBufferHeight);
 	glViewport(0, 0, nFrameBufferWidth, nFrameBufferHeight);
 	glfwSetKeyCallback(pWindow, KeyCallBackFunction);
+	glEnable(GL_DEPTH_TEST);
 
 	return true;
 }
@@ -172,6 +173,7 @@ int main()
 
 	// Triangle Vertex Info:
 	// vertexCoordination	vertexColor			textureCoordination
+	/*
 	const GLfloat vertices[] = {
 		-0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,	0.0f, 0.0f,  // ×óÏÂ
 		 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,   1.0f, 0.0f,  // ÓÒÏÂ
@@ -179,7 +181,67 @@ int main()
 		 // for triangle strip
 		 0.5f,  0.5f, 0.0f, 0.5f, 0.5f, 0.5f,	1.0f, 1.0f	 // Test vertex for draw triangle strip
 	};
+	*/
 
+	// Const variables declaration
+	const glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
+
+	const float vertices[] = {
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+		0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+
+	// Init device environment
 	if (!Init(pWindow, nWindowWidth, nWindowHeight, nFrameBufferWidth, nFrameBufferHeight))
 		return -1;
 
@@ -262,50 +324,26 @@ int main()
 		*/
 
 		// Set position format
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
 		glEnableVertexAttribArray(0);
 
 		// Set color format
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-		glEnableVertexAttribArray(1);
+		//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+		//glEnableVertexAttribArray(1);
 		
 		// Set texture format
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
-		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(1);
 
 		// Unbind VAO
 		glBindVertexArray(0);
 	}
-
-	Transform modelTransform;
-	modelTransform.Rotate(glm::radians(-50.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
-	Transform viewTransform;
-	viewTransform.Translate(0.0f, 0.0f, -3.0f);
-
-	Transform projTransform;
-	projTransform.SetProjectionTransform(glm::radians(45.0f), (float)nWindowWidth / (float)nWindowHeight, 0.1f, 100.0f);
-
-	//Transform rotateTransform;
-	//Transform translateTransform;
-
-	//translateTransform.Translate(1.0f, 0.0f, 0.0f);
 
 	// Main Render Loop.
 	while (!glfwWindowShouldClose(pWindow))
 	{
 		// Send event.
 		glfwPollEvents();
-
-		// Update uniform variable.
-		UpdateUniformVariable1f(shaderProgram, "fMoveOffset", -0.5f, 0.5f);
-		UpdateUniformVariable1f(shaderProgram, "fFaceAlpha");
-
-		//UpdateTransformMatrix(rotateTransform);
-		//transform = rotateTransform * translateTransform;
-		SetUniformVariableMatrix(shaderProgram, "modelMatrix", modelTransform.GetTransformMatrix());
-		SetUniformVariableMatrix(shaderProgram, "viewMatrix", viewTransform.GetTransformMatrix());
-		SetUniformVariableMatrix(shaderProgram, "projectionMatrix", projTransform.GetTransformMatrix());
 
 		// Render backupground.
 		if (GetTickCount64() - nLastUpdateBackupColorTime > 100)
@@ -316,7 +354,7 @@ int main()
 
 		RenderBackupGround(
 			pBackupColor->fRed, pBackupColor->fGreen, pBackupColor->fBlue, pBackupColor->fAlpha,
-			GL_COLOR_BUFFER_BIT
+			GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT
 		);
 
 		// Now we can use VAO to draw triangle.
@@ -332,7 +370,30 @@ int main()
 		}
 		
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		for (int i = 0; i < 10; i++)
+		{
+			Transform modelTransform;
+
+			Transform viewTransform;
+			viewTransform.Translate(0.0f, 0.0f, -3.0f);
+
+			Transform projTransform;
+			projTransform.SetProjectionTransform(glm::radians(45.0f), (float)nWindowWidth / (float)nWindowHeight, 0.1f, 100.0f);
+
+			// UpdateTransformMatrix(rotateTransform);
+			modelTransform.Translate(cubePositions[i].x, cubePositions[i].y, cubePositions[i].z);
+			modelTransform.Rotate(glfwGetTime(), glm::vec3(1.0f, 0.5f, 0.0f));
+			
+			// Update uniform variable.
+			UpdateUniformVariable1f(shaderProgram, "fMoveOffset", -0.5f, 0.5f);
+			UpdateUniformVariable1f(shaderProgram, "fFaceAlpha");
+
+			SetUniformVariableMatrix(shaderProgram, "viewMatrix", viewTransform.GetTransformMatrix());
+			SetUniformVariableMatrix(shaderProgram, "projectionMatrix", projTransform.GetTransformMatrix());
+
+			SetUniformVariableMatrix(shaderProgram, "modelMatrix", modelTransform.GetTransformMatrix());
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 		glBindVertexArray(0);
 
 		glfwSwapBuffers(pWindow);
