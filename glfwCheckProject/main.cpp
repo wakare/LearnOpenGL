@@ -1,9 +1,10 @@
 #pragma once
+
+#define GLEW_STATIC
+
 #include <iostream>
 #include <windows.h>
 #include <string>
-
-#define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -357,7 +358,7 @@ int main()
 			GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT
 		);
 
-		// Now we can use VAO to draw triangle.
+		// Set Texture.
 		glUseProgram(shaderProgram);
 		for (int nIndex = 0; nIndex < textureMgr.GetTextureCount(); nIndex++)
 		{
@@ -368,7 +369,8 @@ int main()
 			uniformVarName.append(std::to_string(nIndex + 1));
 			glUniform1i(glGetUniformLocation(shaderProgram, uniformVarName.c_str()), nIndex);
 		}
-		
+
+		// Now we can use VAO to draw triangle.
 		glBindVertexArray(VAO);
 		for (int i = 0; i < 10; i++)
 		{
