@@ -15,6 +15,7 @@
 #include "ShaderMgr.h"
 #include "TextureMgr.h"
 #include "FPSPrinter.h"
+#include "Camera.h"
 
 // Global variables declaration
 static float fFaceAlpha = 0.2f;
@@ -41,6 +42,27 @@ void KeyCallBackFunction(GLFWwindow* pWindow,int nKey,int nScanCode,int nAction,
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			GlobalState::Instance()->m_ePolygonMode = GL_FILL;
 		}
+	}
+
+	// Camera movement
+	if (nKey == GLFW_KEY_UP && nAction == GLFW_PRESS)
+	{
+
+	}
+
+	if (nKey == GLFW_KEY_DOWN && nAction == GLFW_PRESS)
+	{
+
+	}
+
+	if (nKey == GLFW_KEY_LEFT && nAction == GLFW_PRESS)
+	{
+
+	}
+
+	if (nKey == GLFW_KEY_RIGHT && nAction == GLFW_PRESS)
+	{
+
 	}
 }
 
@@ -88,7 +110,7 @@ void UpdateUniformVariable1f(GLuint shaderProgram, const char* uniformName, floa
 	glUniform1f(vertexColorLocation, uniformValue);
 }
 
-bool LoadResources(TextureMgr& textureMgr, GLuint*& texture)
+bool LoadTextureResources(TextureMgr& textureMgr)
 {
 	// Load Resource.
 	const char* szTexturePath = "Resources/wall.jpg";
@@ -102,13 +124,6 @@ bool LoadResources(TextureMgr& textureMgr, GLuint*& texture)
 	if (!textureMgr.AddTexture(szTexturePath))
 	{
 		std::cout << "[ERROR] Load resource failed, file path = " << szTexturePath << std::endl;
-		return false;
-	}
-
-	texture = (GLuint *)malloc(sizeof(GLuint) * textureMgr.GetTextureCount());
-	if (texture == nullptr)
-	{
-		std::cout << "[ERROR] Malloc texture memory failed" << std::endl;
 		return false;
 	}
 
@@ -165,12 +180,12 @@ int main()
 	GLuint				VBO;
 	GLuint				VAO;
 	GLuint				shaderProgram;
-	GLuint*				texture;
 
 	FPSPrinter			_FPSPrinter;
 	Transform			transform;
 	ShaderMgr			shaderMgr;
 	TextureMgr			textureMgr;
+	Camera*				pCamera;
 
 	// Triangle Vertex Info:
 	// vertexCoordination	vertexColor			textureCoordination
@@ -258,16 +273,16 @@ int main()
 		projection = glm::perspective(glm::radians(45.0f), (float)nWindowWidth / (float)nWindowHeight, 0.1f, 100.0f);
 	}
 
-	if (!LoadResources(textureMgr, texture))
+	if (!LoadTextureResources(textureMgr))
 		return -1;
 
 	// Generate texture object.
-	glGenTextures(textureMgr.GetTextureCount(), texture);
+	textureMgr.genTextureObjects();
 
 	// Bind texture data to texture object.
 	for (int nIndex = 0; nIndex < textureMgr.GetTextureCount(); nIndex++)
 	{
-		glBindTexture(GL_TEXTURE_2D, texture[nIndex]);
+		glBindTexture(GL_TEXTURE_2D, textureMgr.GetTextureObjects()[nIndex]);
 		{
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
 				textureMgr.GetTextureVec()[nIndex]->m_nWidth, textureMgr.GetTextureVec()[nIndex]->m_nHeight,
@@ -364,7 +379,7 @@ int main()
 		{
 			// Activate texture unit before bind.
 			glActiveTexture(GL_TEXTURE0 + nIndex); 
-			glBindTexture(GL_TEXTURE_2D, texture[nIndex]);
+			glBindTexture(GL_TEXTURE_2D, textureMgr.GetTextureObjects()[nIndex]);
 			std::string uniformVarName = "ourTexture";
 			uniformVarName.append(std::to_string(nIndex + 1));
 			glUniform1i(glGetUniformLocation(shaderProgram, uniformVarName.c_str()), nIndex);

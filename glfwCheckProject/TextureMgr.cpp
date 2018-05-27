@@ -1,5 +1,6 @@
 #include "TextureMgr.h"
 #include "GlobalDefine.h"
+#include <iostream>
 
 TextureMgr::TextureMgr()
 {
@@ -26,4 +27,22 @@ std::vector<std::shared_ptr<Texture>> TextureMgr::GetTextureVec()
 size_t TextureMgr::GetTextureCount()
 {
 	return m_textureVec.size();
+}
+
+bool TextureMgr::genTextureObjects()
+{
+	pTexture = (GLuint *)malloc(sizeof(GLuint) * GetTextureCount());
+	if (pTexture == nullptr)
+	{
+		std::cout << "[ERROR] Malloc texture memory failed" << std::endl;
+		return false;
+	}
+
+	glGenTextures(GetTextureCount(), pTexture);
+	return true;
+}
+
+GLuint* TextureMgr::GetTextureObjects()
+{
+	return pTexture;
 }

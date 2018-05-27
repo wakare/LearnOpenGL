@@ -1,14 +1,20 @@
 #pragma once
 #include <glm/glm.hpp>
+#include <mutex>
 
 class Camera
 {
 private:
+	static std::mutex _SingletonMutex;
+	static Camera* _pCamera;
 	glm::mat4 m_viewTransform;
 	glm::vec3 m_cameraPosition;
 
-public:
+	Camera::Camera();
 	Camera(glm::vec3 cameraPosition);
+
+public:
+	static Camera* GetCamera();
 
 	void SetCameraPosition(glm::vec3 cameraPosition);
 	void RotateAlongAxis(float angles, glm::vec3 axisPosition, glm::vec3 axisVec);
