@@ -24,6 +24,8 @@ static float fFaceAlpha = 0.2f;
 // nAction = {`GLFW_PRESS`, `GLFW_RELEASE`, `GLFW_REPEAT`}
 void KeyCallBackFunction(GLFWwindow* pWindow,int nKey,int nScanCode,int nAction,int nMode)
 {
+	static bool keyPressState[1024] = {false};
+
 	// Esc => Exit Application
 	if (nKey == GLFW_KEY_ESCAPE && nAction == GLFW_PRESS)
 	{
@@ -45,25 +47,65 @@ void KeyCallBackFunction(GLFWwindow* pWindow,int nKey,int nScanCode,int nAction,
 	}
 
 	// Camera movement
-	if (nKey == GLFW_KEY_UP && nAction == GLFW_PRESS)
-	{
+	const float cameraMoveSpeed = 0.03f;
+	glm::vec3 cameraMovement = {0.0, 0.0, 0.0};
 
-	}
+	if (nKey == GLFW_KEY_UP && nAction == GLFW_PRESS)
+		keyPressState[GLFW_KEY_UP] = true;
+
+	if (nKey == GLFW_KEY_UP && nAction == GLFW_RELEASE)
+		keyPressState[GLFW_KEY_UP] = false;
 
 	if (nKey == GLFW_KEY_DOWN && nAction == GLFW_PRESS)
-	{
+		keyPressState[GLFW_KEY_DOWN] = true;
 
-	}
+	if (nKey == GLFW_KEY_DOWN && nAction == GLFW_RELEASE)
+		keyPressState[GLFW_KEY_DOWN] = false;
 
 	if (nKey == GLFW_KEY_LEFT && nAction == GLFW_PRESS)
-	{
+		keyPressState[GLFW_KEY_LEFT] = true;
 
-	}
+	if (nKey == GLFW_KEY_LEFT && nAction == GLFW_RELEASE)
+		keyPressState[GLFW_KEY_LEFT] = false;
 
 	if (nKey == GLFW_KEY_RIGHT && nAction == GLFW_PRESS)
-	{
+		keyPressState[GLFW_KEY_RIGHT] = true;
 
-	}
+	if (nKey == GLFW_KEY_RIGHT && nAction == GLFW_RELEASE)
+		keyPressState[GLFW_KEY_RIGHT] = false;
+
+	if (nKey == GLFW_KEY_Z && nAction == GLFW_PRESS)
+		keyPressState[GLFW_KEY_Z] = true;
+
+	if (nKey == GLFW_KEY_Z && nAction == GLFW_RELEASE)
+		keyPressState[GLFW_KEY_Z] = false;
+
+	if (nKey == GLFW_KEY_X && nAction == GLFW_PRESS)
+		keyPressState[GLFW_KEY_X] = true;
+
+	if (nKey == GLFW_KEY_X && nAction == GLFW_RELEASE)
+		keyPressState[GLFW_KEY_X] = false;
+
+	if(keyPressState[GLFW_KEY_UP] == true)
+		cameraMovement.y += cameraMoveSpeed;
+
+	if(keyPressState[GLFW_KEY_DOWN] == true)
+		cameraMovement.y -= cameraMoveSpeed;
+
+	if (keyPressState[GLFW_KEY_LEFT] == true)
+		cameraMovement.x -= cameraMoveSpeed;
+
+	if (keyPressState[GLFW_KEY_RIGHT] == true)
+		cameraMovement.x += cameraMoveSpeed;
+
+	if (keyPressState[GLFW_KEY_Z] == true)
+		cameraMovement.z += cameraMoveSpeed;
+
+	if (keyPressState[GLFW_KEY_X] == true)
+		cameraMovement.z -= cameraMoveSpeed;
+
+	if (cameraMovement.x != 0.0 || cameraMovement.y != 0.0f || cameraMovement.z != 0.0f)
+		Camera::GetCamera()->SelfTransform(cameraMovement);
 }
 
 void UpdateBackupColor(Color_t* pColor)
@@ -164,6 +206,13 @@ bool Init(GLFWwindow*& pWindow, int nWindowWidth, int nWindowHeight, int nFrameB
 	glfwSetKeyCallback(pWindow, KeyCallBackFunction);
 	glEnable(GL_DEPTH_TEST);
 
+	// Init Camera
+	{
+		auto camera = Camera::GetCamera();
+		camera->SetCameraPosition({ 0, 0, -3 });
+		camera->LookAtTarget({ 0, 0, 0 }, { 0, 1, 0 });
+	}
+
 	return true;
 }
 
@@ -177,6 +226,7 @@ int main()
 
 	GLFWwindow*			pWindow						= nullptr;
 	Color_t*			pBackupColor				= new Color_t();
+	Camera*				pCamera						= nullptr;
 	GLuint				VBO;
 	GLuint				VAO;
 	GLuint				shaderProgram;
@@ -185,7 +235,6 @@ int main()
 	Transform			transform;
 	ShaderMgr			shaderMgr;
 	TextureMgr			textureMgr;
-	Camera*				pCamera;
 
 	// Triangle Vertex Info:
 	// vertexCoordination	vertexColor			textureCoordination
@@ -260,18 +309,6 @@ int main()
 	// Init device environment
 	if (!Init(pWindow, nWindowWidth, nWindowHeight, nFrameBufferWidth, nFrameBufferHeight))
 		return -1;
-
-	// Init coordination transform.
-	{
-		glm::mat4 model;
-		model = glm::rotate(model, -55.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-
-		glm::mat4 view;
-		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-
-		glm::mat4 projection;
-		projection = glm::perspective(glm::radians(45.0f), (float)nWindowWidth / (float)nWindowHeight, 0.1f, 100.0f);
-	}
 
 	if (!LoadTextureResources(textureMgr))
 		return -1;
@@ -391,16 +428,20 @@ int main()
 		{
 			Transform modelTransform;
 
+			// UpdateTransformMatrix(rotateTransform);
+			modelTransform.Translate(cubePositions[i].x, cubePositions[i].y, cubePositions[i].z);
+			modelTransform.Rotate(glfwGetTime(), glm::vec3(1.0f, 0.5f, 0.0f));
+
 			Transform viewTransform;
-			viewTransform.Translate(0.0f, 0.0f, -3.0f);
+			if (pCamera == nullptr)
+				pCamera = Camera::GetCamera();
+
+			// TODO: update Camera
+			viewTransform = pCamera->GetViewTransform();
 
 			Transform projTransform;
 			projTransform.SetProjectionTransform(glm::radians(45.0f), (float)nWindowWidth / (float)nWindowHeight, 0.1f, 100.0f);
 
-			// UpdateTransformMatrix(rotateTransform);
-			modelTransform.Translate(cubePositions[i].x, cubePositions[i].y, cubePositions[i].z);
-			modelTransform.Rotate(glfwGetTime(), glm::vec3(1.0f, 0.5f, 0.0f));
-			
 			// Update uniform variable.
 			UpdateUniformVariable1f(shaderProgram, "fMoveOffset", -0.5f, 0.5f);
 			UpdateUniformVariable1f(shaderProgram, "fFaceAlpha");

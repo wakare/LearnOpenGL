@@ -42,6 +42,11 @@ const Transform& Transform::operator*= (const Transform& otherTransform)
 	return (*this);
 }
 
+void Transform::SetTransformMatrix(glm::mat4 matrix)
+{
+	m_transformMatrix = matrix;
+}
+
 glm::mat4 Transform::GetTransformMatrix()
 {
 	return m_transformMatrix;

@@ -17,6 +17,7 @@ public:
 	const Transform& operator*= (const Transform& otherTransform);
 	Transform operator* (const Transform& otherTransform);
 
+	void SetTransformMatrix(glm::mat4 matrix);
 	glm::mat4 GetTransformMatrix();
 	bool SetProjectionTransform(float fov, float aspect, float nearZ, float farZ);
 };
