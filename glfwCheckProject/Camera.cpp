@@ -1,6 +1,6 @@
 #include "Camera.h"
 
-Camera* Camera::g_pCurrentCamera = nullptr;
+std::shared_ptr<Camera> Camera::g_pCurrentCamera = nullptr;
 
 Camera::Camera(glm::vec3 cameraPosition)
 {
@@ -41,10 +41,10 @@ void Camera::LookAtTarget(glm::vec3 targetPosition, glm::vec3 up)
 	_setViewTransform(look, up, right);
 }
 
-Camera* Camera::GetCamera()
+std::shared_ptr<Camera> Camera::GetCamera()
 {
 	static std::once_flag onceFlag;
-	std::call_once(onceFlag, [&] {g_pCurrentCamera = new Camera(); });
+	std::call_once(onceFlag, [&] { g_pCurrentCamera = std::shared_ptr<Camera>(new Camera()); });
 	return g_pCurrentCamera;
 }
 

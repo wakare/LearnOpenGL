@@ -16,6 +16,7 @@
 #include "TextureMgr.h"
 #include "FPSPrinter.h"
 #include "Camera.h"
+#include "SceneMgr.h"
 
 // Global variables declaration
 static float fFaceAlpha = 0.2f;
@@ -224,12 +225,12 @@ int main()
 	int					nFrameBufferHeight			= 0;
 	unsigned long long	nLastUpdateBackupColorTime	= GetTickCount64();
 
-	GLFWwindow*			pWindow						= nullptr;
-	Color_t*			pBackupColor				= new Color_t();
-	Camera*				pCamera						= nullptr;
-	GLuint				VBO;
-	GLuint				VAO;
-	GLuint				shaderProgram;
+	GLFWwindow*				pWindow						= nullptr;
+	Color_t*				pBackupColor				= new Color_t();
+	std::shared_ptr<Camera>	pCamera						= nullptr;
+	GLuint					VBO;
+	GLuint					VAO;
+	GLuint					shaderProgram;
 
 	FPSPrinter			_FPSPrinter;
 	Transform			transform;
